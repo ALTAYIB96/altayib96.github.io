@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Case study: a governed AI knowledge system where a failing gate blocks the build. Interactive flow, evidence rules, and two real incidents.">
+<meta property="og:title" content="The Gate Ladder — Governed AI Knowledge System">
+<meta property="og:description" content="Most AI systems produce an answer and hope it is right. This one cannot produce an answer it cannot defend.">
+<meta property="og:type" content="website">
+<title>The Gate Ladder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,600;12..96,75..100,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --void:#0B0E0D; --ground:#101514; --surface:#161C1A; --raised:#1D2523;
+  --line:#252E2B; --line-2:#334039;
+  --ink:#E9EFEA; --ink-2:#A9B5AE; --muted:#71807A;
+  --muted-fix:#71807A;
+  --amber:#E3A63F; --amber-dim:#3A2E14; --amber-line:#6B5320;
+  --mint:#4FD1B0; --mint-dim:#12302A; --mint-line:#265448;
+  --rust:#E4694A; --rust-dim:#341A13; --rust-line:#6B3222;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--void); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:0 26px}
+.disp{font-family:"Bricolage Grotesque","Helvetica Neue",sans-serif;font-variation-settings:"wdth" 92}
+.mono{font-family:"IBM Plex Mono",monospace}
+
+/* ---------- hero ---------- */
+header{padding:78px 0 40px;position:relative;overflow:hidden}
+header::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(900px 340px at 18% 0%, rgba(227,166,63,.09), transparent 70%);
+}
+.kicker{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--amber);font-weight:600;margin-bottom:22px;
+}
+h1{
+  font-family:"Bricolage Grotesque",sans-serif;font-variation-settings:"wdth" 88;
+  font-weight:800;font-size:clamp(2.5rem,6.4vw,4.6rem);line-height:.98;letter-spacing:-.028em;
+  margin-bottom:24px;text-wrap:balance;max-width:17ch;
+}
+h1 em{font-style:normal;color:var(--amber)}
+.thesis{font-size:1.16rem;color:var(--ink-2);max-width:60ch;margin-bottom:34px}
+.thesis strong{color:var(--ink);font-weight:600}
+.facts{display:flex;flex-wrap:wrap;gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.fact{padding:16px 26px 16px 0;margin-right:26px;border-right:1px solid var(--line)}
+.fact:last-child{border-right:0}
+.fact b{
+  display:block;font-family:"Bricolage Grotesque",sans-serif;font-weight:600;font-size:1.5rem;
+  color:var(--amber);line-height:1;margin-bottom:5px;font-variant-numeric:tabular-nums;
+}
+.fact span{font-size:.8rem;color:var(--muted-fix)}
+
+/* ---------- section frame ---------- */
+section{padding:62px 0;border-top:1px solid var(--line)}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted-fix);font-weight:600;margin-bottom:14px;
+}
+h2{
+  font-family:"Bricolage Grotesque",sans-serif;font-variation-settings:"wdth" 90;
+  font-weight:600;font-size:clamp(1.6rem,3.4vw,2.25rem);line-height:1.1;letter-spacing:-.02em;
+  margin-bottom:14px;text-wrap:balance;
+}
+.lede{color:var(--ink-2);max-width:62ch;margin-bottom:34px}
+
+/* ---------- pipeline ---------- */
+.ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:22px}
+.btn{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  font-weight:600;padding:9px 15px;border-radius:5px;cursor:pointer;
+  background:var(--raised);border:1px solid var(--line-2);color:var(--ink-2);
+  transition:background .15s,color .15s,border-color .15s;
+}
+.btn:hover{color:var(--ink);border-color:var(--amber-line)}
+.btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.btn.armed{background:var(--rust-dim);border-color:var(--rust-line);color:var(--rust)}
+.status{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted-fix);
+  padding:9px 0;flex:1;min-width:260px;
+}
+.status.fail{color:var(--rust)}
+
+.rail{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding-bottom:12px}
+.rail::-webkit-scrollbar{height:7px}
+.rail::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
+.node{
+  flex:0 0 178px;background:var(--surface);border:1px solid var(--line);border-radius:9px;
+  padding:15px 14px;display:flex;flex-direction:column;min-height:184px;
+  transition:opacity .3s,border-color .3s,background .3s,filter .3s;
+}
+.node .n{
+  font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted-fix);font-weight:600;margin-bottom:8px;
+}
+.node h3{
+  font-family:"Bricolage Grotesque",sans-serif;font-weight:600;font-size:1rem;line-height:1.14;
+  margin-bottom:8px;letter-spacing:-.01em;
+}
+.node p{font-size:11.5px;line-height:1.45;color:var(--ink-2)}
+.node.gate{background:var(--amber-dim);border-color:var(--amber-line);cursor:pointer}
+.node.gate h3,.node.gate .n{color:var(--amber)}
+.node.gate:hover{border-color:var(--amber)}
+.node.gate:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.node.out{background:var(--mint-dim);border-color:var(--mint-line)}
+.node.out h3,.node.out .n{color:var(--mint)}
+.node .tag{
+  margin-top:auto;padding-top:9px;font-family:"IBM Plex Mono",monospace;font-size:9px;
+  letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--amber);
+}
+.node.out .tag{color:var(--mint)}
+.arrow{flex:0 0 22px;display:flex;align-items:center;justify-content:center;color:var(--line-2);font-size:15px}
+
+/* failed + blocked states */
+.node.failed{background:var(--rust-dim);border-color:var(--rust)}
+.node.failed h3,.node.failed .n,.node.failed .tag{color:var(--rust)}
+.node.blocked{opacity:.26;filter:grayscale(1)}
+.node.blocked::after{content:""}
+.arrow.blocked{opacity:.2}
+
+.detail{
+  margin-top:20px;background:var(--surface);border:1px solid var(--line);
+  border-left:3px solid var(--amber);border-radius:8px;padding:22px 24px;
+}
+.detail .lbl{
+  font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--amber);font-weight:600;margin-bottom:11px;
+}
+.detail h4{font-family:"Bricolage Grotesque",sans-serif;font-weight:600;font-size:1.15rem;margin-bottom:10px}
+.detail p{color:var(--ink-2);font-size:.94rem;margin-bottom:12px;max-width:74ch}
+.detail p:last-child{margin-bottom:0}
+.detail .origin{
+  border-top:1px solid var(--line);padding-top:13px;margin-top:15px;
+  font-size:.88rem;color:var(--muted-fix);font-style:italic;
+}
+
+/* ---------- rules ---------- */
+.rules{display:grid;gap:14px}
+@media(min-width:780px){.rules{grid-template-columns:repeat(2,1fr)}}
+.rule{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px 22px}
+.rule .num{
+  font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.18em;color:var(--amber);
+  font-weight:600;margin-bottom:9px;
+}
+.rule h4{font-family:"Bricolage Grotesque",sans-serif;font-weight:600;font-size:1.1rem;margin-bottom:8px}
+.rule p{font-size:.92rem;color:var(--ink-2)}
+
+/* ---------- incidents ---------- */
+.cases{display:grid;gap:18px}
+@media(min-width:820px){.cases{grid-template-columns:1fr 1fr}}
+.case{
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:26px 26px 24px;
+  position:relative;overflow:hidden;
+}
+.case .amt{
+  font-family:"Bricolage Grotesque",sans-serif;font-variation-settings:"wdth" 84;
+  font-weight:800;font-size:clamp(2rem,5vw,2.9rem);line-height:1;letter-spacing:-.03em;
+  margin-bottom:6px;font-variant-numeric:tabular-nums;
+}
+.case.catch .amt{color:var(--mint)}
+.case.ghost .amt{color:var(--rust)}
+.case h3{font-family:"Bricolage Grotesque",sans-serif;font-weight:600;font-size:1.12rem;margin-bottom:14px;color:var(--ink)}
+.case p{font-size:.93rem;color:var(--ink-2);margin-bottom:12px}
+.case p:last-child{margin-bottom:0}
+.case .out{
+  margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;color:var(--muted-fix);
+}
+.case .out b{color:var(--ink);font-weight:600}
+
+/* ---------- transfer ---------- */
+.transfer{background:var(--ground);border:1px solid var(--line);border-radius:10px;padding:32px 34px}
+.transfer p{color:var(--ink-2);max-width:70ch;margin-bottom:14px}
+.transfer p:last-child{margin-bottom:0}
+.transfer strong{color:var(--ink);font-weight:600}
+.who{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.who span{
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;
+  padding:6px 11px;border-radius:4px;background:var(--raised);border:1px solid var(--line-2);color:var(--ink-2);
+}
+
+footer{padding:44px 0 70px;border-top:1px solid var(--line);color:var(--muted-fix);font-size:.86rem}
+footer p{max-width:70ch;margin-bottom:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <p class="kicker">Case study · AI systems design</p>
+    <h1 class="disp">A failing gate <em>blocks the build.</em> There is no partial pass.</h1>
+    <p class="thesis">Most AI systems produce an answer and hope it's right. This one is built so that <strong>it cannot produce an answer it can't defend</strong> — and stops instead. Below is the actual flow, running a $15M+ engineering programme. Trip a gate and watch what happens downstream.</p>
+    <div class="facts">
+      <div class="fact"><b>120</b><span>instruction files, loaded selectively</span></div>
+      <div class="fact"><b>35</b><span>governed data tables</span></div>
+      <div class="fact"><b>8</b><span>automated validators</span></div>
+      <div class="fact"><b>3</b><span>blocking gates</span></div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">The flow</p>
+    <h2 class="disp">Eight stages. Three of them can refuse.</h2>
+    <p class="lede">Click any amber gate to see what it checks and the incident that created it. Then use the control below to fail a gate — the system's defining behaviour is what happens next.</p>
+
+    <div class="ctrl">
+      <button class="btn" id="failBtn" type="button">⚡ Fail a gate</button>
+      <button class="btn" id="resetBtn" type="button">↺ Reset</button>
+      <p class="status mono" id="status">All gates PASS · build proceeding · output carries citations</p>
+    </div>
+
+    <div class="rail" id="rail">
+      <div class="node" data-i="0"><div class="n">Input</div><h3>Source documents</h3><p>The organisation's own corpus, swept to full depth. Nothing is "the corpus" until the sweep has run.</p></div>
+      <div class="arrow" data-a="0">→</div>
+      <div class="node" data-i="1"><div class="n">01</div><h3>Ingest &amp; classify</h3><p>Eight-stage intake. Every conflict between documents is reported <em>before</em> anything is generated.</p></div>
+      <div class="arrow" data-a="1">→</div>
+      <div class="node" data-i="2"><div class="n">02</div><h3>Retrieve precedent</h3><p>Prior work loads only after eligibility checks. Present in the database is not the same as usable.</p></div>
+      <div class="arrow" data-a="2">→</div>
+      <div class="node gate" data-i="3" data-gate="0" tabindex="0" role="button" aria-label="Gate 1, Evidence — view detail"><div class="n">Gate 01</div><h3>Evidence</h3><p>No artefact exists until its sources are opened and a manifest written. Coverage proven, not assumed.</p><div class="tag">Blocks ▸</div></div>
+      <div class="arrow" data-a="3">→</div>
+      <div class="node" data-i="5"><div class="n">03</div><h3>Generate</h3><p>Procedural, not improvised. A missing input stops the run — it is never guessed.</p></div>
+      <div class="arrow" data-a="4">→</div>
+      <div class="node" data-i="7"><div class="n">04</div><h3>Validate</h3><p>Scripts check the result across five categories. A non-zero exit halts the build.</p></div>
+      <div class="arrow" data-a="5">→</div>
+      <div class="node gate" data-i="9" data-gate="1" tabindex="0" role="button" aria-label="Gate 2, Adversarial audit — view detail"><div class="n">Gate 02</div><h3>Adversarial audit</h3><p>An independent pass whose only job is to break the result. Iterates until zero defects remain.</p><div class="tag">Blocks ▸</div></div>
+      <div class="arrow" data-a="6">→</div>
+      <div class="node gate" data-i="11" data-gate="2" tabindex="0" role="button" aria-label="Gate 3, Human approval — view detail"><div class="n">Gate 03</div><h3>Human approval</h3><p>A person signs off. A waiver is possible — and is recorded as a numbered decision.</p><div class="tag">Blocks ▸</div></div>
+      <div class="arrow" data-a="7">→</div>
+      <div class="node out" data-i="13"><div class="n">Output</div><h3>Cited result</h3><p>Every claim carries its source. Anything unverified is labelled — never counted or totalled.</p><div class="tag">Defensible</div></div>
+    </div>
+
+    <div class="detail" id="detail">
+      <p class="lbl" id="dLbl">Gate 01 · Evidence</p>
+      <h4 class="disp" id="dTitle">Nothing is produced from a summary</h4>
+      <div id="dBody">
+        <p>No artefact may be produced until the source documents behind it have been opened and a retrieval manifest written — not the index, the source. The extracted layer is a pointer to the documents, never a substitute for them.</p>
+        <p>Coverage is proven rather than asserted: any blank cell in the proof is a stop, not a footnote. An artefact produced without a manifest is void, and is regenerated rather than patched.</p>
+      </div>
+      <p class="origin" id="dOrigin">Origin: written after a plan assembled from database summaries omitted three passenger lifts and a 1500 kVA generator — two of the three longest-lead items on the project. A four-minute sweep of the source found all of it. None of it required judgement; all of it required reading the source.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">The rules</p>
+    <h2 class="disp">Four constraints that bind every reply</h2>
+    <p class="lede">Not guidelines. Each one exists because something went wrong once, and each is enforced mechanically rather than remembered.</p>
+    <div class="rules">
+      <div class="rule"><p class="num">RULE 01</p><h4 class="disp">No output without a source</h4><p>Every statement traces to a document, a clause, or a numbered decision. A citation against a document that was not read in full is void — which is what catches a reference typed from memory.</p></div>
+      <div class="rule"><p class="num">RULE 02</p><h4 class="disp">No number from memory</h4><p>Every count, total and inventory is produced by a verification script in the current session, or it is not stated. A figure carried across a summary is hearsay, and a non-zero exit blocks the build.</p></div>
+      <div class="rule"><p class="num">RULE 03</p><h4 class="disp">No negative on one axis</h4><p>Nothing is reported missing, absent, unpriced or wrong until it is proven so on two independent tests, both named in the reply. If the second test can't run, the finding is unverified — not counted, not totalled.</p></div>
+      <div class="rule"><p class="num">RULE 04</p><h4 class="disp">Stopping is a valid answer</h4><p>Where the evidence isn't there, the system halts and says which file it needs. It does not produce something plausible to fill the gap. Refusal is a designed output, not a failure.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">What it caught</p>
+    <h2 class="disp">Two incidents, in opposite directions</h2>
+    <p class="lede">The first is the error everyone expects AI to make. The second is the one almost nobody designs for — and it is the more expensive of the two.</p>
+    <div class="cases">
+      <div class="case catch">
+        <div class="amt disp">~$490,000</div>
+        <h3>of scope that wasn't in the plan</h3>
+        <p>A work breakdown built from database summaries looked complete. It had omitted three passenger lifts and a 1500 kVA generator with a 72-hour fuel tank — two of the three longest-lead items on the programme.</p>
+        <p>Nothing about finding them required expertise. It required opening the priced bill at item level and sweeping the drawing register by filename, which is now a gate rather than a habit.</p>
+        <p class="out">Result → <b>the evidence gate</b>, and a coverage proof where a blank cell stops the build</p>
+      </div>
+      <div class="case ghost">
+        <div class="amt disp">~$604,000</div>
+        <h3>that was never actually missing</h3>
+        <p>An automated findings register reported 18 packages with no supporting chain and $604,000 unaccounted for, and proposed creating seven new chains. Every check in place passed. The coverage meter read 100%.</p>
+        <p>Re-tested by name instead of by reference number, every one of the 18 already had a full chain. Their references were simply wrong — and <strong>a reference test cannot find a wrong reference.</strong> The fix was 45 corrections, not 34 inventions.</p>
+        <p class="out">Result → <b>the two-axis rule</b>, plus a screen that itself flagged 242 correct rows before being corrected</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Why this matters outside engineering</p>
+    <h2 class="disp">The domain is engineering. The architecture isn't.</h2>
+    <div class="transfer">
+      <p><strong>Every business deploying AI on its own documents faces the same two failures.</strong> The output that invents something plausible, and the output that confidently reports a problem which does not exist. The second is rarer, more expensive, and almost never designed against — because it passes every test you thought to write.</p>
+      <p>The layers that stop both are not industry-specific: grounding every claim in a named source, computing figures rather than recalling them, proving a negative twice before stating it, and designing a refusal path so the system stops instead of guessing.</p>
+      <p>What changes between industries is the vocabulary. A contract, a bill of quantities and a drawing register become a policy, a price list and a case file. <strong>The gates stay exactly where they are.</strong></p>
+      <div class="who">
+        <span>Consultancies</span><span>Engineering firms</span><span>Professional services</span>
+        <span>Agencies</span><span>Operations teams</span><span>Document-heavy SMEs</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Designed, built and operated end to end — corpus analysis, knowledge architecture, instruction design, validation tooling and the regression suite.</p>
+    <p>Client, project and consultant names, contract values and document references are withheld. Figures are converted to USD and rounded.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var GATES = [
+    { lbl:"Gate 01 · Evidence", title:"Nothing is produced from a summary",
+      body:"<p>No artefact may be produced until the source documents behind it have been opened and a retrieval manifest written — not the index, the source. The extracted layer is a pointer to the documents, never a substitute for them.</p><p>Coverage is proven rather than asserted: any blank cell in the proof is a stop, not a footnote. An artefact produced without a manifest is void, and is regenerated rather than patched.</p>",
+      origin:"Origin: written after a plan assembled from database summaries omitted three passenger lifts and a 1500 kVA generator — two of the three longest-lead items on the project. A four-minute sweep of the source found all of it. None of it required judgement; all of it required reading the source." },
+    { lbl:"Gate 02 · Adversarial audit", title:"A pass whose only job is to break the result",
+      body:"<p>An independent review runs against the finished artefact with the explicit goal of finding what is wrong with it — not confirming that it looks right. It does not merely block; it iterates: enumerate every defect, remediate all of them, re-run, until the count is zero.</p><p>There are four exits and only four: pass, blocked on a named question, no-progress after two identical iterations, or a human waiver recorded as a decision. <em>Iteration limit</em>, <em>close enough</em> and <em>note it and continue</em> are not exits.</p>",
+      origin:"Origin: three adversarial rounds on a single file export surfaced nine real defects, seven of which were invisible to every test the system already owned." },
+    { lbl:"Gate 03 · Human approval", title:"A person signs, and a waiver is a record",
+      body:"<p>Nothing reaches a client on the system's own authority. A person approves the artefact, and where they choose to waive a check, that waiver is written down as a numbered decision with its reason — not taken as a silent exception.</p><p>This is the gate that keeps the system a tool rather than an oracle. It also means every deviation is auditable after the fact, which is what makes the output defensible when it is challenged.</p>",
+      origin:"Origin: hardened after it became clear that a bulk approval could approve scope carrying no evidence at all — so approvals are now tested against evidence, not trusted because they exist." }
+  ];
+
+  var rail = document.getElementById('rail');
+  var nodes = Array.prototype.slice.call(rail.querySelectorAll('.node'));
+  var arrows = Array.prototype.slice.call(rail.querySelectorAll('.arrow'));
+  var gates = Array.prototype.slice.call(rail.querySelectorAll('.node.gate'));
+  var status = document.getElementById('status');
+  var failBtn = document.getElementById('failBtn');
+  var resetBtn = document.getElementById('resetBtn');
+  var dLbl = document.getElementById('dLbl'), dTitle = document.getElementById('dTitle'),
+      dBody = document.getElementById('dBody'), dOrigin = document.getElementById('dOrigin');
+  var failedAt = -1;
+
+  function showGate(i){
+    var g = GATES[i];
+    dLbl.textContent = g.lbl; dTitle.textContent = g.title;
+    dBody.innerHTML = g.body; dOrigin.textContent = g.origin;
+  }
+  gates.forEach(function(el){
+    var gi = parseInt(el.getAttribute('data-gate'),10);
+    el.addEventListener('click', function(){ showGate(gi); });
+    el.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); showGate(gi); }
+    });
+  });
+
+  function clearStates(){
+    nodes.forEach(function(n){ n.classList.remove('failed','blocked'); });
+    arrows.forEach(function(a){ a.classList.remove('blocked'); });
+  }
+  function reset(){
+    failedAt = -1; clearStates();
+    status.textContent = 'All gates PASS · build proceeding · output carries citations';
+    status.classList.remove('fail');
+    failBtn.classList.remove('armed');
+    failBtn.textContent = '⚡ Fail a gate';
+  }
+  function failGate(gi){
+    clearStates();
+    var gateEl = gates[gi];
+    var gateIdx = nodes.indexOf(gateEl);
+    gateEl.classList.add('failed');
+    nodes.forEach(function(n, idx){ if(idx > gateIdx) n.classList.add('blocked'); });
+    // arrows after the gate
+    var railKids = Array.prototype.slice.call(rail.children);
+    var gatePos = railKids.indexOf(gateEl);
+    railKids.forEach(function(k, idx){
+      if(idx > gatePos && k.classList.contains('arrow')) k.classList.add('blocked');
+    });
+    status.innerHTML = 'GATE 0' + (gi+1) + ' FAIL · everything downstream is blocked · <strong>no artefact is produced</strong>';
+    status.classList.add('fail');
+    failBtn.classList.add('armed');
+    failBtn.textContent = '⚡ Fail the next gate';
+    showGate(gi);
+    failedAt = gi;
+  }
+
+  failBtn.addEventListener('click', function(){
+    var next = (failedAt + 1) % GATES.length;
+    failGate(next);
+  });
+  resetBtn.addEventListener('click', reset);
+})();
+</script>
+</body>
+</html>
